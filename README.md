@@ -2,6 +2,7 @@
 
 <img width="1919" height="852" alt="image" src="https://github.com/user-attachments/assets/8a835451-01b2-4d18-88a6-18fe576a0e60" />
 
+
 A lightweight desktop web app with:
 - **FastAPI backend**
 - **Plain HTML/CSS/JS frontend**
