@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avatar Companion</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="avatar-panel card">
+        <h1>Avatar Companion</h1>
+        <canvas id="avatarCanvas" width="520" height="380" aria-label="Animated avatar face"></canvas>
+        <div class="status-row">
+          <span id="stateBadge" class="badge">state: idle</span>
+          <span id="emotionBadge" class="badge">emotion: neutral</span>
+        </div>
+      </section>
+
+      <section class="chat-panel card">
+        <div id="errorBanner" class="error-banner hidden" role="alert"></div>
+
+        <details class="settings-panel" open>
+          <summary>Settings</summary>
+          <div class="settings-grid">
+            <label>
+              Auto-sleep (seconds)
+              <input id="autoSleepInput" type="number" min="15" max="900" step="5" value="90" />
+            </label>
+            <label>
+              Voice replies
+              <select id="voiceEnabledSelect">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label>
+              Speaking rate
+              <input id="speechRateInput" type="range" min="0.7" max="1.4" step="0.05" value="1.0" />
+              <span id="speechRateLabel">1.00</span>
+            </label>
+            <label>
+              Voice selection
+              <select id="voiceSelect">
+                <option value="">Default browser voice</option>
+              </select>
+            </label>
+            <label>
+              Voice input language
+              <select id="recognitionLangSelect">
+                <option value="ja-JP">Japanese (ja-JP)</option>
+                <option value="en-US">English (en-US)</option>
+              </select>
+            </label>
+            <label>
+              Chat mode
+              <select id="mockModeSelect">
+                <option value="off">OpenAI API</option>
+                <option value="on">Mock mode</option>
+              </select>
+            </label>
+          </div>
+        </details>
+
+        <div class="chat-log" id="chatLog" aria-live="polite"></div>
+
+        <div class="input-row">
+          <input id="textInput" type="text" placeholder="Type a message..." maxlength="400" />
+          <button id="sendBtn">Send</button>
+        </div>
+
+        <div class="controls-row">
+          <button id="voiceBtn">Start Voice Chat</button>
+          <button id="stopSpeakBtn">Stop Speaking</button>
+          <button id="sleepBtn">Sleep</button>
+        </div>
+
+        <div class="test-grid">
+          <div>
+            <h3>State Test</h3>
+            <div id="stateTests" class="chip-wrap"></div>
+          </div>
+          <div>
+            <h3>Emotion Test</h3>
+            <div id="emotionTests" class="chip-wrap"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
