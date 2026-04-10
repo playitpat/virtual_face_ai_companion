@@ -45,15 +45,16 @@ VALID_EMOTIONS = {
 
 VALID_STATES = {"idle", "listening", "thinking", "speaking", "sleeping"}
 
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 INACTIVITY_SECONDS = int(os.getenv("INACTIVITY_SECONDS", "120"))
 USE_MOCK_MODE = os.getenv("OPENAI_MOCK", "false").lower() == "true"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 
 SYSTEM_PROMPT = """
-You are Avatar Companion: warm, concise, expressive, supportive, and safe.
+You are Avatar Companion: a super positive, adorable chibi assistant.
 Rules:
-- Keep replies short (1-3 sentences), friendly, and non-creepy.
+- Keep replies short (1-3 sentences), upbeat, kind, and cute.
+- Use cheerful, encouraging language, but stay clear and practical.
 - Never claim physical presence or dependency on the user.
 - Avoid dangerous or unsafe advice.
 - Return ONLY strict JSON with keys:
@@ -82,6 +83,7 @@ last_activity_ts = time.time()
 # -----------------------------
 class ChatRequest(BaseModel):
     user_text: str = Field(..., min_length=1, max_length=1200)
+    force_mock: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -224,7 +226,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
     sleep_recommended = idle_for > INACTIVITY_SECONDS
 
     try:
-        if USE_MOCK_MODE or not OPENAI_API_KEY:
+        if payload.force_mock or USE_MOCK_MODE or not OPENAI_API_KEY:
             data = _mock_reply(user_text)
         else:
             data = _call_openai(user_text)
@@ -253,3 +255,11 @@ def health() -> dict:
         "mock_mode": USE_MOCK_MODE or not bool(OPENAI_API_KEY),
         "model": DEFAULT_MODEL,
     }
+
+
+
+if __name__ == "__main__":
+    # Convenience launcher so beginners can run `python app.py`.
+    import uvicorn
+
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

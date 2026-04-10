@@ -1,10 +1,12 @@
 :root {
-  --bg: #f6f7ff;
+  --bg: #f3f5ff;
   --card: #ffffff;
-  --ink: #20243a;
+  --ink: #1f2440;
   --muted: #6d7290;
   --accent: #6b7bff;
   --accent-2: #9e6bff;
+  --error-bg: #fff0f2;
+  --error-ink: #8a243d;
 }
 
 * {
@@ -28,10 +30,10 @@ body {
 
 .card {
   background: var(--card);
-  border: 1px solid #e8ebff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 8px 30px rgba(59, 70, 140, 0.1);
+  border: 1px solid #e4e9ff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(60, 72, 150, 0.11);
 }
 
 h1 {
@@ -76,6 +78,35 @@ h3 {
   display: flex;
   flex-direction: column;
   min-height: 620px;
+  gap: 10px;
+}
+
+.settings-panel {
+  border: 1px solid #e3e7ff;
+  border-radius: 12px;
+  background: #fafbff;
+  padding: 10px;
+}
+
+.settings-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #2f3a64;
+}
+
+.settings-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #384066;
+  font-size: 0.9rem;
 }
 
 .chat-log {
@@ -111,10 +142,25 @@ h3 {
 }
 
 input {
+  width: 100%;
   flex: 1;
   border: 1px solid #dce1ff;
   border-radius: 10px;
   padding: 10px;
+  background: #fff;
+}
+
+select {
+  border: 1px solid #dce1ff;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fff;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #ccd3ff;
+  outline-offset: 1px;
 }
 
 button {
@@ -145,8 +191,25 @@ button:hover {
   padding: 7px 10px;
 }
 
+.error-banner {
+  border: 1px solid #ffd4db;
+  background: var(--error-bg);
+  color: var(--error-ink);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+}
+
+.hidden {
+  display: none;
+}
+
 @media (max-width: 940px) {
   .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-grid {
     grid-template-columns: 1fr;
   }
 }

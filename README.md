@@ -56,17 +56,35 @@ Set at least:
 - `OPENAI_API_KEY=...`
 
 Optional:
-- `OPENAI_MODEL=gpt-4.1-mini`
+- `OPENAI_MODEL=gpt-5.4-mini`
 - `OPENAI_MOCK=true` (for mock-only mode without API key)
 
 ### Run the app
+Option A (recommended during development):
 ```powershell
 uvicorn app:app --reload
+```
+
+Option B (beginner shortcut):
+```powershell
+python app.py
 ```
 
 ### Open in browser
 Go to:
 - `http://127.0.0.1:8000`
+
+### Run with one-click script (Windows)
+You can also double-click `run.bat` (or run it from PowerShell/CMD):
+```powershell
+.\run.bat
+```
+
+What it does:
+1. Creates `.venv` if needed
+2. Installs dependencies from `requirements.txt`
+3. Creates `.env` from `.env.example` if needed
+4. Starts the server at `http://127.0.0.1:8000`
 
 ---
 
@@ -79,7 +97,7 @@ Go to:
 
 ### Voice mode
 1. Click **Start Voice Chat**.
-2. Browser listens via Web Speech API.
+2. Browser listens via Web Speech API (default input language: Japanese `ja-JP`, configurable in Settings).
 3. After transcript capture, backend is called.
 4. Reply is spoken through `speechSynthesis` (if available).
 
@@ -138,7 +156,33 @@ Notes:
 
 ---
 
-## 7) Final project tree and exact setup commands
+## 7) Troubleshooting
+
+### App opens, but chat fails
+- Confirm the server terminal is still running.
+- Open `http://127.0.0.1:8000/api/health` and verify you get JSON.
+- Check `.env` has a valid `OPENAI_API_KEY`.
+- If your network/API key is unavailable, switch **Chat mode** to **Mock mode** in Settings.
+
+### Voice chat button does not listen
+- Use a Chromium-based browser (Chrome/Edge).
+- Allow microphone permission in browser site settings.
+- In Settings, confirm **Voice input language** is `ja-JP` for Japanese speech input.
+- If unsupported, use text chat (it works without voice APIs).
+
+### No spoken reply audio
+- In Settings, ensure **Voice replies = On**.
+- Raise device/system volume.
+- Pick a Japanese voice in **Voice selection** if available.
+- Check if your browser exposes `speechSynthesis` voices (some load after page start).
+
+### Auto-sleep feels too fast/slow
+- Adjust **Auto-sleep (seconds)** in Settings.
+- The avatar becomes sleepy before full sleep to make transition smoother.
+
+---
+
+## 8) Final project tree and exact setup commands
 
 ### Final project tree
 ```text
