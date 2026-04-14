@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AC (Eyshee)</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="fullscreen-wrap">
+      <canvas id="avatarCanvas" width="1280" height="720" aria-label="AC face"></canvas>
+
+      <div class="overlay-top">
+        <span id="stateBadge" class="badge">state: idle</span>
+        <span id="emotionBadge" class="badge">emotion: neutral</span>
+      </div>
+
+      <div id="errorBanner" class="error-banner hidden" role="alert"></div>
+
+      <button id="speakBtn" class="speak-btn">🎤 Speak</button>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
