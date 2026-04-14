@@ -1,5 +1,8 @@
 # AC (Eyshee) Companion (Local MVP)
 
+<img width="1916" height="909" alt="image" src="https://github.com/user-attachments/assets/703a8d20-66a1-48ef-85fe-50cd85a436de" />
+
+
 A lightweight desktop web app with:
 - **FastAPI backend**
 - **Plain HTML/CSS/JS frontend**
