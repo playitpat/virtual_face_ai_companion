@@ -1,0 +1,80 @@
+:root {
+  --bg: #a8dacf;
+  --screen: #c7f3dc;
+  --ink: #123c39;
+  --accent: #2fbba7;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background: var(--bg);
+}
+
+.fullscreen-wrap {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#avatarCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: radial-gradient(circle at 70% 10%, #bdebe2, #a8dacf 65%);
+}
+
+.overlay-top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.badge {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #234742;
+  font-size: 0.9rem;
+}
+
+.speak-btn {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 26px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  background: linear-gradient(140deg, #2cbba6, #5ad1c0);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.speak-btn:active { transform: translateX(-50%) scale(0.98); }
+
+.error-banner {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(90vw, 800px);
+  background: #fff1f3;
+  color: #8a243d;
+  border: 1px solid #ffd4db;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.hidden { display: none; }
