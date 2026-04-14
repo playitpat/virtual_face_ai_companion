@@ -14,12 +14,14 @@ import os
 import random
 import re
 import time
+from io import BytesIO
 from typing import Literal
 
+import edge_tts
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -45,10 +47,11 @@ VALID_EMOTIONS = {
 
 VALID_STATES = {"idle", "listening", "thinking", "speaking", "sleeping"}
 
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 INACTIVITY_SECONDS = int(os.getenv("INACTIVITY_SECONDS", "120"))
 USE_MOCK_MODE = os.getenv("OPENAI_MOCK", "false").lower() == "true"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+TTS_VOICE = os.getenv("TTS_VOICE", "ja-JP-NanamiNeural")
 
 SYSTEM_PROMPT = """
 You are AC (pronounced "Eyshee"): a super positive, cute retro game-console buddy.
@@ -182,7 +185,8 @@ def _call_openai(user_text: str) -> dict:
                 "content": f"User message: {user_text}\nReturn strict JSON only.",
             },
         ],
-        temperature=0.7,
+        temperature=0.4,
+        max_output_tokens=120,
     )
 
     raw = response.output_text.strip()
@@ -255,7 +259,28 @@ def health() -> dict:
         "ok": True,
         "mock_mode": USE_MOCK_MODE or not bool(OPENAI_API_KEY),
         "model": DEFAULT_MODEL,
+        "tts_voice": TTS_VOICE,
     }
+
+
+class TTSRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=400)
+
+
+@app.post("/api/tts")
+async def tts(payload: TTSRequest):
+    """Generate higher-quality Japanese speech audio using edge-tts."""
+    try:
+        communicator = edge_tts.Communicate(payload.text, voice=TTS_VOICE)
+        audio = BytesIO()
+        async for chunk in communicator.stream():
+            if chunk["type"] == "audio":
+                audio.write(chunk["data"])
+        audio.seek(0)
+        return StreamingResponse(audio, media_type="audio/mpeg")
+    except Exception:
+        # Graceful fallback when external TTS service is unavailable.
+        return StreamingResponse(BytesIO(b""), media_type="audio/mpeg", status_code=503)
 
 
 

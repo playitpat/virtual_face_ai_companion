@@ -1,120 +1,120 @@
-// Avatar Companion frontend (light UI)
-// - BMO-inspired (original) retro robot face on canvas
-// - Minimal controls: Start Speaking / Stop Speaking / Sleep
-// - Japanese-first STT/TTS behavior
+// AC (Eyshee) fullscreen mode
+// - One button UI (Speak)
+// - Auto sleep after 90s
+// - No mouth; emotion expressed through eyes/eyebrows only
 
-const STATES = ["idle", "listening", "thinking", "speaking", "sleeping"];
 const AUTO_SLEEP_MS = 90_000;
-
-const appState = {
-  state: "idle",
-  emotion: "neutral",
-  speakingNow: false,
-  manualSleep: false,
-  lastInteractionAt: Date.now(),
-  blink: 1,
-  nextBlinkAt: Date.now() + 1800,
-  pupilX: 0,
-  pupilY: 0,
-  pupilTX: 0,
-  pupilTY: 0,
-  mouthPhase: 0,
-};
-
 const canvas = document.getElementById("avatarCanvas");
 const ctx = canvas.getContext("2d");
 const stateBadge = document.getElementById("stateBadge");
 const emotionBadge = document.getElementById("emotionBadge");
-const chatLog = document.getElementById("chatLog");
-const textInput = document.getElementById("textInput");
-const voiceBtn = document.getElementById("voiceBtn");
-const stopSpeakBtn = document.getElementById("stopSpeakBtn");
-const sleepBtn = document.getElementById("sleepBtn");
+const speakBtn = document.getElementById("speakBtn");
 const errorBanner = document.getElementById("errorBanner");
+
+const state = {
+  mode: "idle",
+  emotion: "neutral",
+  speaking: false,
+  lastInteractionAt: Date.now(),
+  blink: 1,
+  nextBlinkAt: Date.now() + 2000,
+  pupilX: 0,
+  pupilY: 0,
+  targetPupilX: 0,
+  targetPupilY: 0,
+  sleepiness: 0,
+};
+
+function setMode(mode) {
+  state.mode = mode;
+  stateBadge.textContent = `state: ${mode}`;
+}
+function setEmotion(emotion) {
+  state.emotion = emotion || "neutral";
+  emotionBadge.textContent = `emotion: ${state.emotion}`;
+}
+function markInteraction() {
+  state.lastInteractionAt = Date.now();
+  if (state.mode === "sleeping") setMode("idle");
+}
+function showError(text) {
+  errorBanner.textContent = text;
+  errorBanner.classList.remove("hidden");
+}
+function clearError() {
+  errorBanner.textContent = "";
+  errorBanner.classList.add("hidden");
+}
 
 const RecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let recognitionRunning = false;
 if (RecognitionClass) {
   recognition = new RecognitionClass();
-  recognition.lang = "ja-JP"; // Japanese recognition by default
+  recognition.lang = "ja-JP";
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 }
 
-let japaneseVoice = null;
-function refreshJapaneseVoice() {
+let activeAudio = null;
+
+async function speakWithHighQuality(text) {
+  // Try edge-tts backend first.
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob.size > 0) {
+        if (activeAudio) {
+          activeAudio.pause();
+          activeAudio = null;
+        }
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        activeAudio = audio;
+        state.speaking = true;
+        setMode("speaking");
+        await audio.play();
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          state.speaking = false;
+          setMode("idle");
+        };
+        return;
+      }
+    }
+  } catch (_) {
+    // fallback below
+  }
+
+  // Browser fallback
   if (!window.speechSynthesis) return;
-  const voices = window.speechSynthesis.getVoices();
-  japaneseVoice = voices.find((v) => (v.lang || "").toLowerCase().startsWith("ja")) || null;
-}
-refreshJapaneseVoice();
-if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = refreshJapaneseVoice;
-
-function setState(s) {
-  if (!STATES.includes(s)) return;
-  appState.state = s;
-  stateBadge.textContent = `state: ${s}`;
-}
-
-function setEmotion(e) {
-  // Map backend emotions to a BMO-like compact expression set.
-  const map = {
-    neutral: "neutral",
-    happy: "happy",
-    excited: "excited",
-    sad: "sad",
-    concerned: "concerned",
-    surprised: "surprised",
-    sleepy: "sleepy",
-    playful: "playful",
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP";
+  u.rate = 0.92;
+  u.pitch = 1.15;
+  const jpVoice = window.speechSynthesis.getVoices().find((v) => (v.lang || "").toLowerCase().startsWith("ja"));
+  if (jpVoice) u.voice = jpVoice;
+  u.onstart = () => {
+    state.speaking = true;
+    setMode("speaking");
   };
-  appState.emotion = map[e] || "neutral";
-  emotionBadge.textContent = `emotion: ${e}`;
+  u.onend = () => {
+    state.speaking = false;
+    setMode("idle");
+  };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
 }
 
-function addMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = `msg ${role}`;
-  div.textContent = `${role === "user" ? "You" : "Avatar"}: ${text}`;
-  chatLog.appendChild(div);
-  chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-function showError(msg) {
-  errorBanner.textContent = msg;
-  errorBanner.classList.remove("hidden");
-}
-
-function clearError() {
-  errorBanner.textContent = "";
-  errorBanner.classList.add("hidden");
-}
-
-function markInteraction() {
-  appState.lastInteractionAt = Date.now();
-  if (appState.state === "sleeping") wakeUp();
-}
-
-function goSleep(manual = false) {
-  appState.manualSleep = manual;
-  setState("sleeping");
-  setEmotion("sleepy");
-  sleepBtn.textContent = "😊 Wake";
-}
-
-function wakeUp() {
-  appState.manualSleep = false;
-  setState("idle");
-  setEmotion("happy");
-  sleepBtn.textContent = "😴 Sleep";
-}
-
-async function sendChat(text) {
+async function sendTranscript(text) {
   markInteraction();
   clearError();
-  setState("thinking");
-  addMessage("user", text);
+  setMode("thinking");
 
   try {
     const res = await fetch("/api/chat", {
@@ -122,296 +122,229 @@ async function sendChat(text) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_text: text }),
     });
-    if (!res.ok) {
-      throw new Error(`Server error ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     setEmotion(data.emotion || "neutral");
-    setState("speaking");
-    addMessage("assistant", data.reply_text || "うまく受け取れなかったので、もう一度お願い！");
-
-    if (window.speechSynthesis) {
-      speakJapanese(data.reply_text || "了解！");
-    } else {
-      setState(appState.manualSleep ? "sleeping" : "idle");
-    }
+    await speakWithHighQuality(data.reply_text || "うん、聞こえたよ！");
   } catch (err) {
+    setMode("idle");
     setEmotion("concerned");
-    setState("idle");
-    const m = `通信エラー: ${String(err.message || err)}。サーバー起動とAPIキーを確認してね。`;
-    addMessage("assistant", m);
-    showError(m);
+    showError(`応答に失敗しました: ${String(err.message || err)}`);
   }
 }
 
-function speakJapanese(text) {
-  if (!window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "ja-JP";
-  // Slightly slower + higher pitch tends to feel less robotic in many system voices.
-  u.rate = 0.92;
-  u.pitch = 1.18;
-  if (japaneseVoice) u.voice = japaneseVoice;
-
-  u.onstart = () => {
-    appState.speakingNow = true;
-    setState("speaking");
-  };
-  u.onend = () => {
-    appState.speakingNow = false;
-    setState(appState.manualSleep ? "sleeping" : "idle");
-  };
-  u.onerror = () => {
-    appState.speakingNow = false;
-    setState("idle");
-    showError("音声読み上げに失敗しました。別のブラウザ音声を試してね。");
-  };
-
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
-
-function startVoiceChat() {
+function startListening() {
   markInteraction();
   clearError();
-
   if (!recognition) {
-    showError("このブラウザは音声入力に未対応です。テキスト入力を使ってください。");
+    showError("このブラウザは音声入力に未対応です。Chrome/Edgeを使ってください。");
     return;
   }
   if (recognitionRunning) return;
 
-  setState("listening");
-  setEmotion("neutral");
+  setMode("listening");
+  recognitionRunning = true;
 
   recognition.onresult = async (ev) => {
     const transcript = ev.results?.[0]?.[0]?.transcript?.trim();
     if (!transcript) {
-      showError("音声がうまく取れませんでした。もう一度お願いします。");
-      setState("idle");
+      setMode("idle");
       return;
     }
-    await sendChat(transcript);
+    await sendTranscript(transcript);
   };
-
   recognition.onerror = () => {
-    showError("マイク認識エラーです。ブラウザのマイク権限を確認してください。");
-    setState("idle");
     recognitionRunning = false;
+    setMode("idle");
+    showError("音声認識エラー。マイク権限を確認してください。");
   };
   recognition.onend = () => {
     recognitionRunning = false;
-    if (appState.state === "listening") setState("idle");
+    if (state.mode === "listening") setMode("idle");
   };
-
-  recognitionRunning = true;
   recognition.start();
 }
 
-function stopSpeaking() {
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
-  appState.speakingNow = false;
-  setState(appState.manualSleep ? "sleeping" : "idle");
+function stopListening() {
+  if (recognition && recognitionRunning) {
+    try { recognition.stop(); } catch (_) {}
+  }
 }
 
-function updateLife() {
-  const idleMs = Date.now() - appState.lastInteractionAt;
-  if (!appState.manualSleep && idleMs > AUTO_SLEEP_MS) goSleep(false);
+function drawFace(ts) {
+  const t = ts / 1000;
+  const w = canvas.width;
+  const h = canvas.height;
 
-  if (Date.now() > appState.nextBlinkAt) {
-    appState.blink -= 0.28;
-    if (appState.blink <= 0) {
-      appState.blink = 1;
-      appState.nextBlinkAt = Date.now() + 1200 + Math.random() * 1800;
+  // responsive internal canvas
+  if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+  }
+
+  // auto sleep transition
+  const idle = Date.now() - state.lastInteractionAt;
+  const sleepTarget = idle > AUTO_SLEEP_MS ? 1 : 0;
+  state.sleepiness += (sleepTarget - state.sleepiness) * 0.02;
+  if (state.sleepiness > 0.92 && state.mode !== "sleeping") setMode("sleeping");
+  if (state.sleepiness < 0.3 && state.mode === "sleeping") setMode("idle");
+
+  // blinking + smooth pupils
+  if (Date.now() > state.nextBlinkAt) {
+    state.blink -= 0.24;
+    if (state.blink <= 0) {
+      state.blink = 1;
+      state.nextBlinkAt = Date.now() + 1500 + Math.random() * 2000;
     }
   }
-
-  if (Math.random() < 0.015) {
-    appState.pupilTX = (Math.random() * 2 - 1) * 4;
-    appState.pupilTY = (Math.random() * 2 - 1) * 3;
+  if (Math.random() < 0.02) {
+    state.targetPupilX = (Math.random() * 2 - 1) * 12;
+    state.targetPupilY = (Math.random() * 2 - 1) * 7;
   }
-  appState.pupilX += (appState.pupilTX - appState.pupilX) * 0.08;
-  appState.pupilY += (appState.pupilTY - appState.pupilY) * 0.08;
-}
-
-function drawBmoFace(ts) {
-  updateLife();
-  const t = ts / 1000;
-  const bob = appState.state === "sleeping" ? Math.sin(t * 1.8) * 1.0 : Math.sin(t * 2.4) * 2.2;
+  state.pupilX += (state.targetPupilX - state.pupilX) * 0.08;
+  state.pupilY += (state.targetPupilY - state.pupilY) * 0.08;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#b7e6de";
+  ctx.fillStyle = "#a8dacf";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.save();
-  ctx.translate(canvas.width / 2, canvas.height / 2 + bob);
+  const cx = w * 0.5;
+  const cy = h * 0.5 + Math.sin(t * 2) * (2 - state.sleepiness);
 
-  // Full-face BMO-style shell that fills most of the canvas.
+  // full-size shell and screen
   ctx.fillStyle = "#9ddfd3";
   ctx.strokeStyle = "#5ea99f";
-  ctx.lineWidth = 6;
-  roundRect(ctx, -180, -145, 360, 290, 24, true, true);
+  ctx.lineWidth = Math.max(4, w * 0.004);
+  roundRect(cx - w * 0.36, cy - h * 0.32, w * 0.72, h * 0.64, 26, true, true);
 
-  // Screen
   ctx.fillStyle = "#c7f3dc";
-  roundRect(ctx, -155, -120, 310, 230, 14, true, false);
+  roundRect(cx - w * 0.31, cy - h * 0.26, w * 0.62, h * 0.5, 16, true, false);
 
-  // Pick expression by emotion/state.
-  const mood = appState.state === "sleeping" ? "sleepy" : appState.emotion;
-  const eyeY = -22 + (appState.state === "listening" ? -4 : 0);
-  const eyeH = Math.max(2, 14 * appState.blink * (appState.state === "sleeping" ? 0.45 : 1));
+  drawExpressiveEyes(cx, cy, w, h);
+  drawBrows(cx, cy, w, h);
 
-  drawEyes(mood, eyeY, eyeH);
-  drawMouth(mood);
-
-  // Console details
+  // minimal console details (no mouth)
   ctx.fillStyle = "#1c5c57";
-  roundRect(ctx, -95, 116, 190, 12, 2, true, false);
-  ctx.fillStyle = "#f8dd67";
-  ctx.beginPath();
-  ctx.arc(-115, 121, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ff8da0";
-  ctx.beginPath();
-  ctx.arc(122, 121, 5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-  requestAnimationFrame(drawBmoFace);
+  roundRect(cx - w * 0.13, cy + h * 0.28, w * 0.26, h * 0.014, 2, true, false);
 }
 
-function drawEyes(mood, eyeY, eyeH) {
-  ctx.strokeStyle = "#123c39";
-  ctx.fillStyle = "#123c39";
-  ctx.lineWidth = 4;
+function drawExpressiveEyes(cx, cy, w, h) {
+  const mood = state.mode === "sleeping" ? "sleepy" : state.emotion;
+  const baseY = cy - h * 0.03;
+  const lx = cx - w * 0.12;
+  const rx = cx + w * 0.12;
+  const r = w * 0.011;
 
-  if (mood === "sleepy") {
-    // Closed eyes
-    ctx.beginPath();
-    ctx.arc(-65, eyeY + 8, 12, Math.PI * 0.15, Math.PI * 0.85);
-    ctx.arc(65, eyeY + 8, 12, Math.PI * 0.15, Math.PI * 0.85);
-    ctx.stroke();
-    return;
-  }
-
-  // Default dot eyes (BMO-like)
-  ctx.beginPath();
-  ctx.arc(-65 + appState.pupilX, eyeY + appState.pupilY, 8, 0, Math.PI * 2);
-  ctx.arc(65 + appState.pupilX, eyeY + appState.pupilY, 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (mood === "surprised" || mood === "excited") {
-    ctx.beginPath();
-    ctx.arc(-65, eyeY, 12, 0, Math.PI * 2);
-    ctx.arc(65, eyeY, 12, 0, Math.PI * 2);
-    ctx.stroke();
-  } else if (mood === "concerned") {
-    ctx.beginPath();
-    ctx.moveTo(-85, eyeY - 15);
-    ctx.lineTo(-48, eyeY - 6);
-    ctx.moveTo(48, eyeY - 6);
-    ctx.lineTo(85, eyeY - 15);
-    ctx.stroke();
-  } else if (mood === "playful") {
-    ctx.beginPath();
-    ctx.arc(65, eyeY, 15, Math.PI * 0.2, Math.PI * 1.2);
-    ctx.stroke();
-  }
-}
-
-function drawMouth(mood) {
-  const speaking = appState.speakingNow || appState.state === "speaking";
-  const talk = speaking ? Math.abs(Math.sin((appState.mouthPhase += 0.35)) * 16) : 0;
-
-  ctx.strokeStyle = "#205451";
-  ctx.fillStyle = "#4bbb8f";
-  ctx.lineWidth = 5;
-
-  if (mood === "sad" || mood === "concerned") {
-    ctx.beginPath();
-    ctx.arc(0, 36, 30, Math.PI * 1.15, Math.PI * 1.85);
-    ctx.stroke();
-    return;
-  }
-
-  if (mood === "surprised") {
-    ctx.beginPath();
-    ctx.ellipse(0, 35, 16, 24 + talk * 0.3, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    return;
-  }
+  ctx.strokeStyle = "#143f39";
+  ctx.fillStyle = "#143f39";
+  ctx.lineWidth = Math.max(3, w * 0.0024);
 
   if (mood === "sleepy") {
     ctx.beginPath();
-    ctx.moveTo(-24, 39);
-    ctx.lineTo(24, 39);
+    ctx.arc(lx, baseY + 8, 18, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.arc(rx, baseY + 8, 18, Math.PI * 0.15, Math.PI * 0.85);
     ctx.stroke();
     return;
   }
 
-  // Happy / neutral / playful default smile
+  if (mood === "sad") {
+    ctx.beginPath();
+    ctx.arc(lx, baseY + 8, 16, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.arc(rx, baseY + 8, 16, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+    return;
+  }
+
+  if (mood === "concerned") {
+    ctx.beginPath();
+    ctx.moveTo(lx - 18, baseY + 4);
+    ctx.lineTo(lx + 16, baseY - 8);
+    ctx.moveTo(rx - 16, baseY - 8);
+    ctx.lineTo(rx + 18, baseY + 4);
+    ctx.stroke();
+    return;
+  }
+
+  // neutral/happy/playful/excited/surprised: dot eyes with variation
+  const eyeScale = mood === "surprised" ? 1.8 : mood === "excited" ? 1.4 : 1;
   ctx.beginPath();
-  ctx.arc(0, 21, 32, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.arc(lx + state.pupilX * 0.3, baseY + state.pupilY * 0.3, r * eyeScale, 0, Math.PI * 2);
+  ctx.arc(rx + state.pupilX * 0.3, baseY + state.pupilY * 0.3, r * eyeScale, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (mood === "happy" || mood === "playful") {
+    ctx.beginPath();
+    ctx.arc(lx, baseY - 12, 14, Math.PI * 0.2, Math.PI * 0.8);
+    ctx.arc(rx, baseY - 12, 14, Math.PI * 0.2, Math.PI * 0.8);
+    ctx.stroke();
+  }
+}
+
+function drawBrows(cx, cy, w, h) {
+  const mood = state.mode === "sleeping" ? "sleepy" : state.emotion;
+  const y = cy - h * 0.11;
+  const lx = cx - w * 0.12;
+  const rx = cx + w * 0.12;
+
+  ctx.strokeStyle = "#1a5149";
+  ctx.lineWidth = Math.max(2, w * 0.002);
+  ctx.beginPath();
+
+  if (mood === "concerned" || mood === "sad") {
+    ctx.moveTo(lx - 20, y - 6);
+    ctx.lineTo(lx + 20, y + 4);
+    ctx.moveTo(rx - 20, y + 4);
+    ctx.lineTo(rx + 20, y - 6);
+  } else if (mood === "excited" || mood === "surprised") {
+    ctx.moveTo(lx - 20, y - 10);
+    ctx.lineTo(lx + 20, y - 16);
+    ctx.moveTo(rx - 20, y - 16);
+    ctx.lineTo(rx + 20, y - 10);
+  } else if (mood === "sleepy") {
+    // no brows when asleep
+  } else {
+    ctx.moveTo(lx - 20, y - 2);
+    ctx.lineTo(lx + 20, y - 2);
+    ctx.moveTo(rx - 20, y - 2);
+    ctx.lineTo(rx + 20, y - 2);
+  }
+
   ctx.stroke();
-  if (speaking) {
-    roundRect(ctx, -20, 34, 40, 8 + talk, 6, true, false);
-  }
 }
 
-function roundRect(c, x, y, w, h, r, fill, stroke) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.lineTo(x + w - r, y);
-  c.quadraticCurveTo(x + w, y, x + w, y + r);
-  c.lineTo(x + w, y + h - r);
-  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  c.lineTo(x + r, y + h);
-  c.quadraticCurveTo(x, y + h, x, y + h - r);
-  c.lineTo(x, y + r);
-  c.quadraticCurveTo(x, y, x + r, y);
-  c.closePath();
-  if (fill) c.fill();
-  if (stroke) c.stroke();
+function roundRect(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
 }
 
-voiceBtn.addEventListener("click", startVoiceChat);
-stopSpeakBtn.addEventListener("click", stopSpeaking);
-sleepBtn.addEventListener("click", () => {
-  markInteraction();
-  if (appState.state === "sleeping") wakeUp();
-  else goSleep(true);
+speakBtn.addEventListener("click", () => {
+  if (recognitionRunning) stopListening();
+  else startListening();
 });
 
-textInput.addEventListener("keydown", async (e) => {
-  if (e.key !== "Enter") return;
-  const text = textInput.value.trim();
-  if (!text) return;
-  textInput.value = "";
-  await sendChat(text);
-});
-
-// Push-to-talk shortcut: hold Space to listen, release Space to stop capture.
+// Hold Space to talk; release to stop capture.
 window.addEventListener("keydown", (e) => {
-  if (e.code !== "Space") return;
-  if (e.repeat) return;
-  if (document.activeElement === textInput) return;
+  if (e.code !== "Space" || e.repeat) return;
   e.preventDefault();
-  startVoiceChat();
+  startListening();
 });
-
 window.addEventListener("keyup", (e) => {
   if (e.code !== "Space") return;
-  if (document.activeElement === textInput) return;
   e.preventDefault();
-  if (recognition && recognitionRunning) {
-    try {
-      recognition.stop();
-    } catch (_) {
-      // no-op
-    }
-  }
+  stopListening();
 });
 
-addMessage("assistant", "こんにちは！ボクは AC（エイシー）。日本語で気軽に話してね 🌟");
-requestAnimationFrame(drawBmoFace);
+setEmotion("neutral");
+setMode("idle");
+requestAnimationFrame(drawFace);

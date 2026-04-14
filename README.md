@@ -4,7 +4,7 @@ A lightweight desktop web app with:
 - **FastAPI backend**
 - **Plain HTML/CSS/JS frontend**
 - **Canvas animated avatar face**
-- Text chat + browser voice input/output (when supported)
+- Voice-first interaction with one-button UI
 - Emotion and behavior state metadata returned by backend
 
 No heavy local dependencies like Whisper, PyTorch, ElevenLabs, or ffmpeg are required.
@@ -56,8 +56,9 @@ Set at least:
 - `OPENAI_API_KEY=...`
 
 Optional:
-- `OPENAI_MODEL=gpt-5.4-mini`
+- `OPENAI_MODEL=gpt-4.1-mini` (faster default)
 - `OPENAI_MOCK=true` (for mock-only mode without API key)
+- `TTS_VOICE=ja-JP-NanamiNeural` (edge-tts voice)
 
 ### Run the app
 Option A (recommended during development):
@@ -91,26 +92,20 @@ What it does:
 ## 3) How to use
 
 ### Text mode
-1. Type in the input box.
-2. Press **Enter** to send.
-3. Avatar transitions: reaction -> thinking -> speaking -> idle.
+This UI is now voice-first and fullscreen.
 
 ### Voice mode
-1. Click **Start Speaking**.
+1. Click **Speak**.
 2. Browser listens via Web Speech API in Japanese (`ja-JP`).
 3. After transcript capture, backend is called.
-4. Reply is spoken through `speechSynthesis` (if available).
+4. Reply is spoken through `edge-tts` backend (`/api/tts`) when available, with browser speech fallback.
 5. Shortcut: hold **Space** to push-to-talk, release **Space** to stop listening.
 
-### Sleep/Wake
-- Click **Sleep** to force sleeping state.
-- Click **Wake** (same button) to wake up.
-- Auto-sleep: after inactivity, avatar becomes sleepy then sleeping.
+### Sleep
+- Sleep is fully automatic after 90 seconds of inactivity.
 
 ### Minimal controls
-- **Start Speaking**: start Japanese microphone input.
-- **Stop Speaking**: stop current voice playback.
-- **Sleep / Wake**: manually sleep or wake the avatar.
+- **Speak**: start/stop listening.
 
 ---
 
@@ -174,11 +169,11 @@ Notes:
 
 ### No spoken reply audio
 - Raise device/system volume.
-- The app auto-selects a Japanese voice when available.
-- Check if your browser exposes `speechSynthesis` voices (some load after page start).
+- Backend uses `edge-tts`; confirm internet access and that `TTS_VOICE` is valid.
+- If edge-tts is unavailable, browser `speechSynthesis` fallback is used.
 
 ### Auto-sleep feels too fast/slow
-- Auto-sleep currently uses a simple built-in timeout (`AUTO_SLEEP_MS` in `static/app.js`).
+- Auto-sleep timeout is currently fixed at 90 seconds (`AUTO_SLEEP_MS` in `static/app.js`).
 
 ---
 

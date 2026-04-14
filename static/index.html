@@ -3,35 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Avatar Companion</title>
+    <title>AC (Eyshee)</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <section class="avatar-panel card">
-        <h1>AC（エイシー）</h1>
-        <canvas id="avatarCanvas" width="520" height="380" aria-label="Animated avatar face"></canvas>
-        <div class="status-row">
-          <span id="stateBadge" class="badge">state: idle</span>
-          <span id="emotionBadge" class="badge">emotion: neutral</span>
-        </div>
-      </section>
+    <main class="fullscreen-wrap">
+      <canvas id="avatarCanvas" width="1280" height="720" aria-label="AC face"></canvas>
 
-      <section class="chat-panel card">
-        <div id="errorBanner" class="error-banner hidden" role="alert"></div>
+      <div class="overlay-top">
+        <span id="stateBadge" class="badge">state: idle</span>
+        <span id="emotionBadge" class="badge">emotion: neutral</span>
+      </div>
 
-        <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <div id="errorBanner" class="error-banner hidden" role="alert"></div>
 
-        <div class="input-row">
-          <input id="textInput" type="text" placeholder="メッセージを入力して Enter..." maxlength="400" />
-        </div>
-
-        <div class="controls-row">
-          <button id="voiceBtn">🎤 Start Speaking</button>
-          <button id="stopSpeakBtn">⏹ Stop Speaking</button>
-          <button id="sleepBtn">😴 Sleep</button>
-        </div>
-      </section>
+      <button id="speakBtn" class="speak-btn">🎤 Speak</button>
     </main>
 
     <script src="/static/app.js"></script>
