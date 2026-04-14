@@ -34,6 +34,7 @@ const errorBanner = document.getElementById("errorBanner");
 
 const RecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
+let recognitionRunning = false;
 if (RecognitionClass) {
   recognition = new RecognitionClass();
   recognition.lang = "ja-JP"; // Japanese recognition by default
@@ -57,7 +58,18 @@ function setState(s) {
 }
 
 function setEmotion(e) {
-  appState.emotion = e;
+  // Map backend emotions to a BMO-like compact expression set.
+  const map = {
+    neutral: "neutral",
+    happy: "happy",
+    excited: "excited",
+    sad: "sad",
+    concerned: "concerned",
+    surprised: "surprised",
+    sleepy: "sleepy",
+    playful: "playful",
+  };
+  appState.emotion = map[e] || "neutral";
   emotionBadge.textContent = `emotion: ${e}`;
 }
 
@@ -168,6 +180,7 @@ function startVoiceChat() {
     showError("このブラウザは音声入力に未対応です。テキスト入力を使ってください。");
     return;
   }
+  if (recognitionRunning) return;
 
   setState("listening");
   setEmotion("neutral");
@@ -185,8 +198,14 @@ function startVoiceChat() {
   recognition.onerror = () => {
     showError("マイク認識エラーです。ブラウザのマイク権限を確認してください。");
     setState("idle");
+    recognitionRunning = false;
+  };
+  recognition.onend = () => {
+    recognitionRunning = false;
+    if (appState.state === "listening") setState("idle");
   };
 
+  recognitionRunning = true;
   recognition.start();
 }
 
@@ -219,59 +238,125 @@ function updateLife() {
 function drawBmoFace(ts) {
   updateLife();
   const t = ts / 1000;
-  const bob = appState.state === "sleeping" ? Math.sin(t * 1.8) * 1.2 : Math.sin(t * 2.4) * 3;
+  const bob = appState.state === "sleeping" ? Math.sin(t * 1.8) * 1.0 : Math.sin(t * 2.4) * 2.2;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#d8f4ef";
+  ctx.fillStyle = "#b7e6de";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
   ctx.translate(canvas.width / 2, canvas.height / 2 + bob);
 
-  // Body/face shell (BMO-inspired, but original)
-  ctx.fillStyle = "#84d4c8";
-  ctx.strokeStyle = "#4fa89a";
+  // Full-face BMO-style shell that fills most of the canvas.
+  ctx.fillStyle = "#9ddfd3";
+  ctx.strokeStyle = "#5ea99f";
   ctx.lineWidth = 6;
-  roundRect(ctx, -120, -105, 240, 210, 26, true, true);
+  roundRect(ctx, -180, -145, 360, 290, 24, true, true);
 
   // Screen
-  ctx.fillStyle = "#b5efd6";
-  roundRect(ctx, -90, -72, 180, 126, 14, true, false);
+  ctx.fillStyle = "#c7f3dc";
+  roundRect(ctx, -155, -120, 310, 230, 14, true, false);
 
-  // Eyes
-  const eyeY = -20 + (appState.state === "listening" ? -2 : 0);
+  // Pick expression by emotion/state.
+  const mood = appState.state === "sleeping" ? "sleepy" : appState.emotion;
+  const eyeY = -22 + (appState.state === "listening" ? -4 : 0);
   const eyeH = Math.max(2, 14 * appState.blink * (appState.state === "sleeping" ? 0.45 : 1));
-  ctx.fillStyle = "#234b46";
-  roundRect(ctx, -56, eyeY, 34, eyeH, 6, true, false);
-  roundRect(ctx, 22, eyeY, 34, eyeH, 6, true, false);
 
-  // Pupils/highlights
-  ctx.fillStyle = "#e7fff8";
-  ctx.beginPath();
-  ctx.arc(-39 + appState.pupilX, eyeY + 4 + appState.pupilY, 2.6, 0, Math.PI * 2);
-  ctx.arc(39 + appState.pupilX, eyeY + 4 + appState.pupilY, 2.6, 0, Math.PI * 2);
-  ctx.fill();
+  drawEyes(mood, eyeY, eyeH);
+  drawMouth(mood);
 
-  // Mouth (friendlier and less robotic movement)
-  const baseMouth = appState.state === "sleeping" ? 4 : 10;
-  const talk = appState.speakingNow ? Math.abs(Math.sin((appState.mouthPhase += 0.38)) * 9) : 0;
-  const mouthH = baseMouth + talk;
-  const mouthY = 24;
-  ctx.fillStyle = "#245b4c";
-  roundRect(ctx, -26, mouthY, 52, mouthH, 7, true, false);
-
-  // Simple button accents for console vibe
+  // Console details
+  ctx.fillStyle = "#1c5c57";
+  roundRect(ctx, -95, 116, 190, 12, 2, true, false);
   ctx.fillStyle = "#f8dd67";
   ctx.beginPath();
-  ctx.arc(-55, 79, 9, 0, Math.PI * 2);
+  ctx.arc(-115, 121, 4, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#ff8da0";
   ctx.beginPath();
-  ctx.arc(58, 79, 7, 0, Math.PI * 2);
+  ctx.arc(122, 121, 5, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
   requestAnimationFrame(drawBmoFace);
+}
+
+function drawEyes(mood, eyeY, eyeH) {
+  ctx.strokeStyle = "#123c39";
+  ctx.fillStyle = "#123c39";
+  ctx.lineWidth = 4;
+
+  if (mood === "sleepy") {
+    // Closed eyes
+    ctx.beginPath();
+    ctx.arc(-65, eyeY + 8, 12, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.arc(65, eyeY + 8, 12, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    return;
+  }
+
+  // Default dot eyes (BMO-like)
+  ctx.beginPath();
+  ctx.arc(-65 + appState.pupilX, eyeY + appState.pupilY, 8, 0, Math.PI * 2);
+  ctx.arc(65 + appState.pupilX, eyeY + appState.pupilY, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (mood === "surprised" || mood === "excited") {
+    ctx.beginPath();
+    ctx.arc(-65, eyeY, 12, 0, Math.PI * 2);
+    ctx.arc(65, eyeY, 12, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (mood === "concerned") {
+    ctx.beginPath();
+    ctx.moveTo(-85, eyeY - 15);
+    ctx.lineTo(-48, eyeY - 6);
+    ctx.moveTo(48, eyeY - 6);
+    ctx.lineTo(85, eyeY - 15);
+    ctx.stroke();
+  } else if (mood === "playful") {
+    ctx.beginPath();
+    ctx.arc(65, eyeY, 15, Math.PI * 0.2, Math.PI * 1.2);
+    ctx.stroke();
+  }
+}
+
+function drawMouth(mood) {
+  const speaking = appState.speakingNow || appState.state === "speaking";
+  const talk = speaking ? Math.abs(Math.sin((appState.mouthPhase += 0.35)) * 16) : 0;
+
+  ctx.strokeStyle = "#205451";
+  ctx.fillStyle = "#4bbb8f";
+  ctx.lineWidth = 5;
+
+  if (mood === "sad" || mood === "concerned") {
+    ctx.beginPath();
+    ctx.arc(0, 36, 30, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+    return;
+  }
+
+  if (mood === "surprised") {
+    ctx.beginPath();
+    ctx.ellipse(0, 35, 16, 24 + talk * 0.3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    return;
+  }
+
+  if (mood === "sleepy") {
+    ctx.beginPath();
+    ctx.moveTo(-24, 39);
+    ctx.lineTo(24, 39);
+    ctx.stroke();
+    return;
+  }
+
+  // Happy / neutral / playful default smile
+  ctx.beginPath();
+  ctx.arc(0, 21, 32, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.stroke();
+  if (speaking) {
+    roundRect(ctx, -20, 34, 40, 8 + talk, 6, true, false);
+  }
 }
 
 function roundRect(c, x, y, w, h, r, fill, stroke) {
@@ -306,5 +391,27 @@ textInput.addEventListener("keydown", async (e) => {
   await sendChat(text);
 });
 
-addMessage("assistant", "こんにちは！ボクは前向きアシスタント。日本語で話してね 🌟");
+// Push-to-talk shortcut: hold Space to listen, release Space to stop capture.
+window.addEventListener("keydown", (e) => {
+  if (e.code !== "Space") return;
+  if (e.repeat) return;
+  if (document.activeElement === textInput) return;
+  e.preventDefault();
+  startVoiceChat();
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.code !== "Space") return;
+  if (document.activeElement === textInput) return;
+  e.preventDefault();
+  if (recognition && recognitionRunning) {
+    try {
+      recognition.stop();
+    } catch (_) {
+      // no-op
+    }
+  }
+});
+
+addMessage("assistant", "こんにちは！ボクは AC（エイシー）。日本語で気軽に話してね 🌟");
 requestAnimationFrame(drawBmoFace);

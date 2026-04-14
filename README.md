@@ -1,4 +1,4 @@
-# Avatar Companion (Local MVP)
+# AC (Eyshee) Companion (Local MVP)
 
 A lightweight desktop web app with:
 - **FastAPI backend**
@@ -100,6 +100,7 @@ What it does:
 2. Browser listens via Web Speech API in Japanese (`ja-JP`).
 3. After transcript capture, backend is called.
 4. Reply is spoken through `speechSynthesis` (if available).
+5. Shortcut: hold **Space** to push-to-talk, release **Space** to stop listening.
 
 ### Sleep/Wake
 - Click **Sleep** to force sleeping state.
