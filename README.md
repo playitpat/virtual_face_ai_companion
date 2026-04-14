@@ -4,7 +4,7 @@ A lightweight desktop web app with:
 - **FastAPI backend**
 - **Plain HTML/CSS/JS frontend**
 - **Canvas animated avatar face**
-- Voice-first interaction with one-button UI
+- Voice-first interaction with one-button UI in fullscreen mode
 - Emotion and behavior state metadata returned by backend
 
 No heavy local dependencies like Whisper, PyTorch, ElevenLabs, or ffmpeg are required.
@@ -100,6 +100,10 @@ This UI is now voice-first and fullscreen.
 3. After transcript capture, backend is called.
 4. Reply is spoken through `edge-tts` backend (`/api/tts`) when available, with browser speech fallback.
 5. Shortcut: hold **Space** to push-to-talk, release **Space** to stop listening.
+
+### Visual behavior
+- Face now fills the screen.
+- Emotions are shown with expressive eyes, eyebrows, and mouth variants.
 
 ### Sleep
 - Sleep is fully automatic after 90 seconds of inactivity.

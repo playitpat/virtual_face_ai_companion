@@ -1,7 +1,7 @@
 // AC (Eyshee) fullscreen mode
 // - One button UI (Speak)
 // - Auto sleep after 90s
-// - No mouth; emotion expressed through eyes/eyebrows only
+// - Retro robot design inspired by provided reference
 
 const AUTO_SLEEP_MS = 90_000;
 const canvas = document.getElementById("avatarCanvas");
@@ -209,58 +209,81 @@ function drawFace(ts) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const cx = w * 0.5;
-  const cy = h * 0.5 + Math.sin(t * 2) * (2 - state.sleepiness);
+  const cy = h * 0.52 + Math.sin(t * 2) * (2 - state.sleepiness);
 
   // full-size shell and screen
-  ctx.fillStyle = "#9ddfd3";
-  ctx.strokeStyle = "#5ea99f";
+  ctx.fillStyle = "#d8e8ef";
+  ctx.strokeStyle = "#b6cfd9";
   ctx.lineWidth = Math.max(4, w * 0.004);
-  roundRect(cx - w * 0.36, cy - h * 0.32, w * 0.72, h * 0.64, 26, true, true);
+  // Fill most of the screen so it feels truly fullscreen.
+  roundRect(cx - w * 0.43, cy - h * 0.41, w * 0.86, h * 0.82, 42, true, true);
 
-  ctx.fillStyle = "#c7f3dc";
-  roundRect(cx - w * 0.31, cy - h * 0.26, w * 0.62, h * 0.5, 16, true, false);
+  ctx.fillStyle = "#0b2f4f";
+  roundRect(cx - w * 0.34, cy - h * 0.27, w * 0.68, h * 0.54, 34, true, false);
 
-  drawExpressiveEyes(cx, cy, w, h);
+  // Antennas similar to reference model.
+  ctx.strokeStyle = "#b6cfd9";
+  ctx.lineWidth = Math.max(3, w * 0.003);
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.21, cy - h * 0.42);
+  ctx.lineTo(cx - w * 0.24, cy - h * 0.48);
+  ctx.moveTo(cx + w * 0.21, cy - h * 0.42);
+  ctx.lineTo(cx + w * 0.24, cy - h * 0.48);
+  ctx.stroke();
+  ctx.fillStyle = "#c7dce5";
+  ctx.beginPath();
+  ctx.arc(cx - w * 0.24, cy - h * 0.48, Math.max(6, w * 0.01), 0, Math.PI * 2);
+  ctx.arc(cx + w * 0.24, cy - h * 0.48, Math.max(6, w * 0.01), 0, Math.PI * 2);
+  ctx.fill();
+
+  drawExpressiveEyes(cx, cy, w, h, t);
   drawBrows(cx, cy, w, h);
-
-  // minimal console details (no mouth)
-  ctx.fillStyle = "#1c5c57";
-  roundRect(cx - w * 0.13, cy + h * 0.28, w * 0.26, h * 0.014, 2, true, false);
+  drawMouth(cx, cy, w, h, t);
 }
 
-function drawExpressiveEyes(cx, cy, w, h) {
+function drawExpressiveEyes(cx, cy, w, h, t) {
   const mood = state.mode === "sleeping" ? "sleepy" : state.emotion;
-  const baseY = cy - h * 0.03;
+  const baseY = cy - h * 0.05;
   const lx = cx - w * 0.12;
   const rx = cx + w * 0.12;
-  const r = w * 0.011;
+  const r = w * 0.014;
 
-  ctx.strokeStyle = "#143f39";
-  ctx.fillStyle = "#143f39";
+  ctx.strokeStyle = "#93f4ff";
+  ctx.fillStyle = "#9df6ff";
   ctx.lineWidth = Math.max(3, w * 0.0024);
 
   if (mood === "sleepy") {
+    // three-dot sleepy face style
+    const dotR = Math.max(4, w * 0.006);
     ctx.beginPath();
-    ctx.arc(lx, baseY + 8, 18, Math.PI * 0.15, Math.PI * 0.85);
-    ctx.arc(rx, baseY + 8, 18, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.arc(cx - w * 0.05, baseY + h * 0.08, dotR, 0, Math.PI * 2);
+    ctx.arc(cx, baseY + h * 0.08, dotR, 0, Math.PI * 2);
+    ctx.arc(cx + w * 0.05, baseY + h * 0.08, dotR, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+
+  if (mood === "concerned") {
+    // red angry style from reference
+    ctx.fillStyle = "#ff3f47";
+    ctx.strokeStyle = "#ff3f47";
+    ctx.beginPath();
+    ctx.arc(lx, baseY + 4, r, 0, Math.PI * 2);
+    ctx.arc(rx, baseY + 4, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(lx - 24, baseY - 22);
+    ctx.lineTo(lx + 20, baseY - 8);
+    ctx.moveTo(rx - 20, baseY - 8);
+    ctx.lineTo(rx + 24, baseY - 22);
     ctx.stroke();
     return;
   }
 
   if (mood === "sad") {
     ctx.beginPath();
-    ctx.arc(lx, baseY + 8, 16, Math.PI * 1.1, Math.PI * 1.9);
-    ctx.arc(rx, baseY + 8, 16, Math.PI * 1.1, Math.PI * 1.9);
-    ctx.stroke();
-    return;
-  }
-
-  if (mood === "concerned") {
-    ctx.beginPath();
-    ctx.moveTo(lx - 18, baseY + 4);
-    ctx.lineTo(lx + 16, baseY - 8);
-    ctx.moveTo(rx - 16, baseY - 8);
-    ctx.lineTo(rx + 18, baseY + 4);
+    ctx.arc(lx, baseY + 10, 18, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.arc(rx, baseY + 10, 18, Math.PI * 1.1, Math.PI * 1.9);
     ctx.stroke();
     return;
   }
@@ -278,6 +301,19 @@ function drawExpressiveEyes(cx, cy, w, h) {
     ctx.arc(rx, baseY - 12, 14, Math.PI * 0.2, Math.PI * 0.8);
     ctx.stroke();
   }
+  if (mood === "playful") {
+    // wink
+    ctx.beginPath();
+    ctx.arc(rx, baseY, 18, Math.PI * 0.2, Math.PI * 1.2);
+    ctx.stroke();
+  }
+  if (state.mode === "listening") {
+    // attentive sparkle line
+    ctx.strokeStyle = "rgba(157,246,255,0.6)";
+    ctx.beginPath();
+    ctx.arc(cx, baseY, w * 0.05 + Math.sin(t * 5) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 function drawBrows(cx, cy, w, h) {
@@ -286,7 +322,7 @@ function drawBrows(cx, cy, w, h) {
   const lx = cx - w * 0.12;
   const rx = cx + w * 0.12;
 
-  ctx.strokeStyle = "#1a5149";
+  ctx.strokeStyle = "#9df6ff";
   ctx.lineWidth = Math.max(2, w * 0.002);
   ctx.beginPath();
 
@@ -310,6 +346,37 @@ function drawBrows(cx, cy, w, h) {
   }
 
   ctx.stroke();
+}
+
+function drawMouth(cx, cy, w, h, t) {
+  const mood = state.mode === "sleeping" ? "sleepy" : state.emotion;
+  const speakingOpen = state.speaking ? (Math.sin(t * 18) + 1) * 0.5 : 0;
+  ctx.strokeStyle = mood === "concerned" ? "#ff3f47" : "#9df6ff";
+  ctx.fillStyle = mood === "concerned" ? "#ff3f47" : "#9df6ff";
+  ctx.lineWidth = Math.max(3, w * 0.0024);
+
+  if (mood === "sleepy") return;
+  if (mood === "surprised") {
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + h * 0.09, w * 0.015, h * (0.028 + speakingOpen * 0.03), 0, 0, Math.PI * 2);
+    ctx.stroke();
+    return;
+  }
+  if (mood === "sad" || mood === "concerned") {
+    ctx.beginPath();
+    ctx.arc(cx, cy + h * 0.12, w * 0.04, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+    return;
+  }
+  // happy/neutral/playful/excited
+  ctx.beginPath();
+  ctx.arc(cx, cy + h * 0.07, w * 0.035, Math.PI * 0.2, Math.PI * 0.8);
+  ctx.stroke();
+  if (state.speaking) {
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + h * 0.1, w * 0.018, h * (0.02 + speakingOpen * 0.02), 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 function roundRect(x, y, w, h, r, fill, stroke) {
