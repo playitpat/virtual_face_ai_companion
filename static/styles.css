@@ -1,10 +1,9 @@
 :root {
-  --bg: #f3f5ff;
+  --bg: #ecf8fb;
   --card: #ffffff;
-  --ink: #1f2440;
-  --muted: #6d7290;
-  --accent: #6b7bff;
-  --accent-2: #9e6bff;
+  --ink: #1f3b47;
+  --accent: #43c5b6;
+  --accent-2: #67d8cb;
   --error-bg: #fff0f2;
   --error-ink: #8a243d;
 }
@@ -17,7 +16,7 @@ body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at top right, #eef1ff, var(--bg));
+  background: radial-gradient(circle at top right, #d9f5f1, var(--bg));
 }
 
 .app-shell {
@@ -30,10 +29,10 @@ body {
 
 .card {
   background: var(--card);
-  border: 1px solid #e4e9ff;
+  border: 1px solid #d7eef2;
   border-radius: 18px;
   padding: 18px;
-  box-shadow: 0 10px 28px rgba(60, 72, 150, 0.11);
+  box-shadow: 0 10px 24px rgba(48, 102, 120, 0.1);
 }
 
 h1 {
@@ -55,8 +54,8 @@ h3 {
   width: 100%;
   max-width: 520px;
   border-radius: 14px;
-  background: linear-gradient(160deg, #fcfdff, #f3f5ff);
-  border: 1px solid #e4e8ff;
+  background: linear-gradient(160deg, #e6fbf7, #d8f1ef);
+  border: 1px solid #bde8e0;
 }
 
 .status-row {
@@ -79,34 +78,6 @@ h3 {
   flex-direction: column;
   min-height: 620px;
   gap: 10px;
-}
-
-.settings-panel {
-  border: 1px solid #e3e7ff;
-  border-radius: 12px;
-  background: #fafbff;
-  padding: 10px;
-}
-
-.settings-panel summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: #2f3a64;
-}
-
-.settings-grid {
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.settings-grid label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: #384066;
-  font-size: 0.9rem;
 }
 
 .chat-log {
@@ -138,7 +109,7 @@ h3 {
 .controls-row {
   display: flex;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 input {
@@ -183,14 +154,6 @@ button:hover {
   gap: 8px;
 }
 
-.chip {
-  border-radius: 999px;
-  background: #e9ecff;
-  color: #333d65;
-  font-size: 0.85rem;
-  padding: 7px 10px;
-}
-
 .error-banner {
   border: 1px solid #ffd4db;
   background: var(--error-bg);
@@ -206,10 +169,6 @@ button:hover {
 
 @media (max-width: 940px) {
   .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .settings-grid {
     grid-template-columns: 1fr;
   }
 }

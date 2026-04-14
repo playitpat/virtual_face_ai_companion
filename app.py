@@ -51,8 +51,9 @@ USE_MOCK_MODE = os.getenv("OPENAI_MOCK", "false").lower() == "true"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 
 SYSTEM_PROMPT = """
-You are Avatar Companion: a super positive, adorable chibi assistant.
+You are Avatar Companion: a super positive, cute retro game-console buddy (BMO-inspired vibe, but original).
 Rules:
+- Always reply in natural Japanese.
 - Keep replies short (1-3 sentences), upbeat, kind, and cute.
 - Use cheerful, encouraging language, but stay clear and practical.
 - Never claim physical presence or dependency on the user.
@@ -145,21 +146,21 @@ def _sanitize_state(state_hint: str | None) -> str:
 def _mock_reply(user_text: str) -> dict:
     """Simple mock conversation used when API key is unavailable."""
     seeds = [
-        "I like that idea! Want to do a tiny next step together?",
-        "Nice thought. I can help you break it into two easy steps.",
-        "That makes sense. I'm cheering for you—what part should we tackle first?",
-        "Great question! Here's the short version: start small, then iterate.",
+        "いいね！まずは小さく1ステップだけ一緒に進めよう。",
+        "その発想すてき！2つの簡単な手順に分けてみようか。",
+        "わかるよ。無理せず、最初の一歩だけ決めよう！",
+        "ナイス質問！短く言うと「小さく始めて、少しずつ改善」だよ。",
     ]
 
     lowered = user_text.lower()
     if any(w in lowered for w in ["sad", "upset", "anxious", "stressed"]):
-        reply = "I'm here with you. Want a quick reset: one deep breath, then one small action?"
+        reply = "大丈夫、いっしょに整えよう。深呼吸を1回して、次に小さな行動を1つ決めよう。"
         emotion = "concerned"
     elif any(w in lowered for w in ["joke", "fun", "play"]):
-        reply = "Play mode on! Why don't robots panic? They cache their feelings."
+        reply = "あそびモード起動！ロボが落ち着いてる理由？気持ちを“キャッシュ”してるから！"
         emotion = "playful"
     elif any(w in lowered for w in ["sleep", "tired"]):
-        reply = "You deserve rest. A short break now could boost your energy later."
+        reply = "休憩しよう。今ちょっと休むと、あとで集中しやすくなるよ。"
         emotion = "sleepy"
     else:
         reply = random.choice(seeds)

@@ -1,8 +1,5 @@
 # Avatar Companion (Local MVP)
 
-<img width="1919" height="852" alt="image" src="https://github.com/user-attachments/assets/8a835451-01b2-4d18-88a6-18fe576a0e60" />
-
-
 A lightweight desktop web app with:
 - **FastAPI backend**
 - **Plain HTML/CSS/JS frontend**
@@ -95,12 +92,12 @@ What it does:
 
 ### Text mode
 1. Type in the input box.
-2. Click **Send** (or press Enter).
+2. Press **Enter** to send.
 3. Avatar transitions: reaction -> thinking -> speaking -> idle.
 
 ### Voice mode
-1. Click **Start Voice Chat**.
-2. Browser listens via Web Speech API (default input language: Japanese `ja-JP`, configurable in Settings).
+1. Click **Start Speaking**.
+2. Browser listens via Web Speech API in Japanese (`ja-JP`).
 3. After transcript capture, backend is called.
 4. Reply is spoken through `speechSynthesis` (if available).
 
@@ -109,9 +106,10 @@ What it does:
 - Click **Wake** (same button) to wake up.
 - Auto-sleep: after inactivity, avatar becomes sleepy then sleeping.
 
-### Manual testing panels
-- **State Test**: quickly set idle/listening/thinking/speaking/sleeping.
-- **Emotion Test**: quickly set neutral/happy/excited/sad/concerned/surprised/sleepy/playful.
+### Minimal controls
+- **Start Speaking**: start Japanese microphone input.
+- **Stop Speaking**: stop current voice playback.
+- **Sleep / Wake**: manually sleep or wake the avatar.
 
 ---
 
@@ -165,23 +163,21 @@ Notes:
 - Confirm the server terminal is still running.
 - Open `http://127.0.0.1:8000/api/health` and verify you get JSON.
 - Check `.env` has a valid `OPENAI_API_KEY`.
-- If your network/API key is unavailable, switch **Chat mode** to **Mock mode** in Settings.
+- If your network/API key is unavailable, set `OPENAI_MOCK=true` in `.env` and restart.
 
 ### Voice chat button does not listen
 - Use a Chromium-based browser (Chrome/Edge).
 - Allow microphone permission in browser site settings.
-- In Settings, confirm **Voice input language** is `ja-JP` for Japanese speech input.
+- Japanese recognition is fixed to `ja-JP` in this simplified UI.
 - If unsupported, use text chat (it works without voice APIs).
 
 ### No spoken reply audio
-- In Settings, ensure **Voice replies = On**.
 - Raise device/system volume.
-- Pick a Japanese voice in **Voice selection** if available.
+- The app auto-selects a Japanese voice when available.
 - Check if your browser exposes `speechSynthesis` voices (some load after page start).
 
 ### Auto-sleep feels too fast/slow
-- Adjust **Auto-sleep (seconds)** in Settings.
-- The avatar becomes sleepy before full sleep to make transition smoother.
+- Auto-sleep currently uses a simple built-in timeout (`AUTO_SLEEP_MS` in `static/app.js`).
 
 ---
 
