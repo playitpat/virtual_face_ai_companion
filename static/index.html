@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avatar Companion</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="avatar-panel card">
+        <h1>Avatar Companion</h1>
+        <canvas id="avatarCanvas" width="520" height="380" aria-label="Animated avatar face"></canvas>
+        <div class="status-row">
+          <span id="stateBadge" class="badge">state: idle</span>
+          <span id="emotionBadge" class="badge">emotion: neutral</span>
+        </div>
+      </section>
+
+      <section class="chat-panel card">
+        <div id="errorBanner" class="error-banner hidden" role="alert"></div>
+
+        <div class="chat-log" id="chatLog" aria-live="polite"></div>
+
+        <div class="input-row">
+          <input id="textInput" type="text" placeholder="メッセージを入力して Enter..." maxlength="400" />
+        </div>
+
+        <div class="controls-row">
+          <button id="voiceBtn">🎤 Start Speaking</button>
+          <button id="stopSpeakBtn">⏹ Stop Speaking</button>
+          <button id="sleepBtn">😴 Sleep</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
